@@ -23,17 +23,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import collections
-import math
 import numpy as np
-import six
 import tensorflow as tf
 import tensorflow.keras.layers as KL
 from tensorflow.keras.utils import get_file
 
 from params import get_model_params, IMAGENET_WEIGHTS
 from initializers import conv_kernel_initializer, dense_kernel_initializer
-
 
 
 def round_filters(filters, global_params):
@@ -60,7 +56,7 @@ def round_repeats(repeats, global_params):
     multiplier = global_params.depth_coefficient
     if not multiplier:
         return repeats
-    return int(math.ceil(multiplier * repeats))
+    return int(np.ceil(multiplier * repeats))
 
 class Swish(KL.Layer):
     def __init__(self, **kwargs):
