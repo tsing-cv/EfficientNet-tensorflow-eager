@@ -33,6 +33,7 @@ from model import EfficientNetB0
 model = EfficientNetB0(classes=10, weights="imagenet", include_top=False)
 ```
 ### reference
-1. https://github.com/qubvel/efficientnet
-2. https://github.com/mingxingtan/efficientnet
-3. https://github.com/mingxingtan/mnasnet
+1. https://arxiv.org/abs/1905.11946
+2. https://github.com/qubvel/efficientnet
+3. https://github.com/mingxingtan/efficientnet
+4. https://github.com/mingxingtan/mnasnet
