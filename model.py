@@ -27,10 +27,7 @@ import collections
 import math
 import numpy as np
 import six
-from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-
-import tensorflow.keras.models as KM
 import tensorflow.keras.layers as KL
 from tensorflow.keras.utils import get_file
 
@@ -89,12 +86,8 @@ class DropConnect(KL.Layer):
         output = tf.div(inputs, keep_prob) * binary_tensor
         return output
 
-    def get_config(self):
-        config = super().get_config()
-        config['drop_connect_rate'] = self.drop_connect_rate
-        return config
 
-class SEBlock(tf.keras.layers.Layer):
+class SEBlock(KL.Layer):
     def __init__(self, block_args, global_params, name='seblock', **kwargs):
         super().__init__(name=name, **kwargs)
         num_reduced_filters = max(1, int(block_args.input_filters * block_args.se_ratio))
@@ -106,7 +99,7 @@ class SEBlock(tf.keras.layers.Layer):
                                 kernel_initializer=conv_kernel_initializer,
                                 padding='same',
                                 use_bias=True)
-        self.act1 = KL.ReLU()#Swish()
+        self.act1 = Swish()#KL.ReLU()
         # Excite
         self.conv2 = KL.Conv2D(filters,
                                 kernel_size=[1, 1],
@@ -118,7 +111,7 @@ class SEBlock(tf.keras.layers.Layer):
     def call(self, inputs, training=False):
         x = self.gap(inputs)
         x = self.conv1(x)
-        x = self.act1(x)#Swish()(x)
+        x = self.act1(x)
         # Excite
         x = self.conv2(x)
         x = self.act2(x)
@@ -126,7 +119,7 @@ class SEBlock(tf.keras.layers.Layer):
         return out
 
 
-class MBConvBlock(tf.keras.layers.Layer):
+class MBConvBlock(KL.Layer):
     def __init__(self, block_args, global_params, drop_connect_rate=None, name='mbconvblock', **kwargs):
         super().__init__(name=name, **kwargs)
         batch_norm_momentum = global_params.batch_norm_momentum
@@ -147,7 +140,7 @@ class MBConvBlock(tf.keras.layers.Layer):
         self.norm = KL.BatchNormalization(axis=-1,
                                         momentum=batch_norm_momentum,
                                         epsilon=batch_norm_epsilon)
-        self.act = KL.ReLU()#Swish()
+        self.act = Swish()#KL.ReLU()
 
         self.conv1 = KL.DepthwiseConv2D([kernel_size, kernel_size],
                                         strides=block_args.strides,
@@ -157,7 +150,7 @@ class MBConvBlock(tf.keras.layers.Layer):
         self.norm1 = KL.BatchNormalization(axis=-1,
                                         momentum=batch_norm_momentum,
                                         epsilon=batch_norm_epsilon)
-        self.act1 = KL.ReLU()#Swish()
+        self.act1 = Swish()#KL.ReLU()
 
 
         self.seblock = SEBlock(block_args, global_params)
@@ -182,7 +175,7 @@ class MBConvBlock(tf.keras.layers.Layer):
 
         x = self.conv1(x)
         x = self.norm1(x, training=training)
-        x = self.act1(x)#Swish()(x)
+        x = self.act1(x)
 
         if self.has_se:
             x = self.seblock(x, training=training)
@@ -217,7 +210,7 @@ class EfficientNet(tf.keras.Model):
         self.norm1 = KL.BatchNormalization(axis=-1,
                                         momentum=batch_norm_momentum,
                                         epsilon=batch_norm_epsilon)
-        self.act1 = KL.ReLU()#Swish()
+        self.act1 = Swish()#KL.ReLU()
 
         # Blocks part
         block_idx = 1
@@ -257,7 +250,7 @@ class EfficientNet(tf.keras.Model):
         self.norm2 = KL.BatchNormalization(axis=-1,
                                         momentum=batch_norm_momentum,
                                         epsilon=batch_norm_epsilon)
-        self.act2 = KL.ReLU()#Swish()
+        self.act2 = Swish()#KL.ReLU()
 
 
         self.gap = KL.GlobalAveragePooling2D(data_format=global_params.data_format)
