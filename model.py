@@ -206,7 +206,7 @@ class EfficientNet(tf.keras.Model):
         self.norm1 = KL.BatchNormalization(axis=-1,
                                         momentum=batch_norm_momentum,
                                         epsilon=batch_norm_epsilon)
-        self.act1 = Swish()#KL.ReLU()
+        self.act1 = Swish()# KL.ReLU()
 
         # Blocks part
         block_idx = 1
@@ -214,7 +214,7 @@ class EfficientNet(tf.keras.Model):
         drop_rate = global_params.drop_connect_rate or 0
         drop_rate_dx = drop_rate / n_blocks
 
-        for block_args in block_args_list:
+        for i,block_args in enumerate(block_args_list):
             assert block_args.num_repeat > 0
             # Update block input and output filters based on depth multiplier.
             block_args = block_args._replace(
@@ -224,15 +224,15 @@ class EfficientNet(tf.keras.Model):
             )
 
             # The first block needs to take care of stride and filter size increase.
-            setattr(self, f"mbconvblock{block_idx}", MBConvBlock(block_args, global_params,
+            setattr(self, f"mbconvblock{i}", MBConvBlock(block_args, global_params,
                             drop_connect_rate=drop_rate_dx * block_idx))
             block_idx += 1
 
             if block_args.num_repeat > 1:
                 block_args = block_args._replace(input_filters=block_args.output_filters, strides=[1, 1])
 
-            for _ in range(block_args.num_repeat - 1):
-                setattr(self, f"mbconvblock{block_idx}", MBConvBlock(block_args, global_params,
+            for repeat in range(1, block_args.num_repeat):
+                setattr(self, f"mbconvblock{i}_{repeat}", MBConvBlock(block_args, global_params,
                                 drop_connect_rate=drop_rate_dx * block_idx))
                 block_idx += 1
 
@@ -246,7 +246,7 @@ class EfficientNet(tf.keras.Model):
         self.norm2 = KL.BatchNormalization(axis=-1,
                                         momentum=batch_norm_momentum,
                                         epsilon=batch_norm_epsilon)
-        self.act2 = Swish()#KL.ReLU()
+        self.act2 = Swish()# KL.ReLU()
 
 
         self.gap = KL.GlobalAveragePooling2D(data_format=global_params.data_format)
@@ -259,14 +259,14 @@ class EfficientNet(tf.keras.Model):
         x = self.act1(x)
 
         block_idx = 1
-        for block_args in self.block_args_list:
-            x = getattr(self, f"mbconvblock{block_idx}")(x, training=training)
+        for i,block_args in enumerate(self.block_args_list):
+            x = getattr(self, f"mbconvblock{i}")(x, training=training)
             block_idx += 1
             if block_args.num_repeat > 1:
                 block_args = block_args._replace(input_filters=block_args.output_filters, strides=[1, 1])
 
-            for _ in range(block_args.num_repeat - 1):
-                x = getattr(self, f"mbconvblock{block_idx}")(x, training=training)
+            for repeat in range(1, block_args.num_repeat):
+                x = getattr(self, f"mbconvblock{i}_{repeat}")(x, training=training)
                 block_idx += 1
 
         # Head part
